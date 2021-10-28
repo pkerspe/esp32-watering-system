@@ -1,0 +1,8 @@
+{
+    "valves": [
+        {"id": 1, "name": "Ventil 1", "description": "Wilder Wein", "waterDurationSec": 1},
+        {"id": 2, "name": "Ventil 2", "description": "Blauregen (1)", "waterDurationSec": 1},
+        {"id": 3, "name": "Ventil 3", "description": "Blauregen (2)", "waterDurationSec": 1},
+        {"id": 4, "name": "Ventil 4", "description": "Buchsbaum + Blauregen (3)", "waterDurationSec": 1}
+    ]
+}

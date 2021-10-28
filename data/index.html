@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Watering System</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charset="utf-8" />
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+            crossorigin="anonymous"
+        />
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+            integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+        <style>
+            .colorOpen {
+                color: #4756db;
+            }
+            .colorClosed {
+                color: #bbb;
+            }
+
+            .btn:focus {
+                outline: none;
+                box-shadow: none;
+            }
+
+            .connected {
+                color: green;
+            }
+
+            .disconnected {
+                color: red;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#"><img src="esp_watersystem_logo.svg" style="width: 100px; margin-right: 20px" /> Watering-System</a>
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarCollapse"
+                    aria-controls="navbarCollapse"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="./index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./update">Update</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <nav class="navbar navbar-inverse navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button
+                        type="button"
+                        class="navbar-toggle collapsed"
+                        data-toggle="collapse"
+                        data-target="#navbar"
+                        aria-expanded="false"
+                        aria-controls="navbar"
+                    >
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#"></a>
+                </div>
+                <div id="navbar" class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="#">Home</a></li>
+                        <li><a href="/update">Update</a></li>
+                    </ul>
+                </div>
+                <!--/.nav-collapse -->
+            </div>
+        </nav>
+
+        <div class="container pt-5">
+            <div class="p-5 mb-4 bg-light rounded-3">
+                <div class="container-fluid py-1">
+                    <div class="text-center">
+                        <img src="esp_watersystem_logo.svg" style="width: 400px; margin-right: 20px" />
+                        <h1 class="display-5" style="color: #e58800">ESP-32 Watering System</h1>
+                    </div>
+
+                    <div><i class="fas fa-stopwatch"></i> Nächster geplanter Bewässerungslauf in <span id="nextPlannedRun"></span></div>
+                    <div><i class="fas fa-clock"></i> Serverzeit: <span id="serverTime"></span></div>
+                    <div><i id="connectionStatus" class="fas fa-wifi disconnected"></i> <i class="fas fa-info"></i> Status: <span id="status"></span></div>
+                    <hr class="my-4" />
+                    <p class="lead">Aktueller Status der schaltbaren Kanäle</p>
+                    <div class="container">
+                        <div class="row pb-1">
+                            <div class="col-1">Pumpe:</div>
+                            <div class="col-1">
+                                <span id="pumpStateValue">NA</span>
+                            </div>
+                            <div class="col-1 text-center">
+                                <i id="pumpicon" class="fas fa-cog"></i>
+                            </div>
+                        </div>
+                        <div class="row pb-1">
+                            <div class="col-1">Ventil 1:</div>
+                            <div class="col-1">
+                                <span id="valve1StateValue">NA</span>
+                            </div>
+                            <div class="col-1 text-center">
+                                <i id="valve1icon" class="fas"></i>
+                            </div>
+                            <div class="col">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon1"><i class="fas fa-stopwatch"></i></span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        id="durationValve1"
+                                        class="form-control"
+                                        min="1"
+                                        max="120"
+                                        style="max-width: 60px"
+                                        aria-label="Bewässerungsdauer in Sekunden"
+                                    />
+                                    <div class="input-group-append input-group-sm">
+                                        <span class="input-group-text">sec</span>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" type="button" onclick="setWateringDurationForValve(1, 'durationValve1')">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <button type="button" class="btn btn-success btn-sm" onclick="activateValve(1, 1)">Pulse</button>
+                                <button type="button" class="btn btn-warning btn-sm" onclick="activateValve(1, 10)">Für 10 Sekunden bewässern</button>
+                            </div>
+                            <div class="col" id="valve1description"></div>
+                        </div>
+                        <div class="row pb-1">
+                            <div class="col-1">Ventil 2:</div>
+                            <div class="col-1">
+                                <span id="valve2StateValue">NA</span>
+                            </div>
+                            <div class="col-1 text-center">
+                                <i id="valve2icon" class="fas"></i>
+                            </div>
+                            <div class="col">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon1"><i class="fas fa-stopwatch"></i></span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        id="durationValve2"
+                                        class="form-control"
+                                        min="1"
+                                        max="120"
+                                        style="max-width: 60px"
+                                        aria-label="Bewässerungsdauer in Sekunden"
+                                    />
+                                    <div class="input-group-append input-group-sm">
+                                        <span class="input-group-text">sec</span>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" type="button" onclick="setWateringDurationForValve(2, 'durationValve2')">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <button type="button" class="btn btn-success btn-sm" onclick="activateValve(2, 1)">Pulse</button>
+                                <button type="button" class="btn btn-warning btn-sm" onclick="activateValve(2, 10)">Für 10 Sekunden bewässern</button>
+                            </div>
+                            <div class="col" id="valve2description"></div>
+                        </div>
+                        <div class="row pb-1">
+                            <div class="col-1">Ventil 3:</div>
+                            <div class="col-1">
+                                <span id="valve3StateValue">NA</span>
+                            </div>
+                            <div class="col-1 text-center">
+                                <i id="valve3icon" class="fas"></i>
+                            </div>
+                            <div class="col">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon1"><i class="fas fa-stopwatch"></i></span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        id="durationValve3"
+                                        class="form-control"
+                                        min="1"
+                                        max="120"
+                                        style="max-width: 60px"
+                                        aria-label="Bewässerungsdauer in Sekunden"
+                                    />
+                                    <div class="input-group-append input-group-sm">
+                                        <span class="input-group-text">sec</span>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" type="button" onclick="setWateringDurationForValve(3, 'durationValve3')">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <button type="button" class="btn btn-success btn-sm" onclick="activateValve(3, 1)">Pulse</button>
+                                <button type="button" class="btn btn-warning btn-sm" onclick="activateValve(3, 10)">Für 10 Sekunden bewässern</button>
+                            </div>
+                            <div class="col" id="valve3description"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-1">Ventil 4:</div>
+                            <div class="col-1">
+                                <span id="valve4StateValue">NA</span>
+                            </div>
+                            <div class="col-1 text-center">
+                                <i id="valve4icon" class="fas"></i>
+                            </div>
+                            <div class="col">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon1"><i class="fas fa-stopwatch"></i></span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        id="durationValve4"
+                                        class="form-control"
+                                        min="1"
+                                        max="120"
+                                        style="max-width: 60px"
+                                        aria-label="Bewässerungsdauer in Sekunden"
+                                    />
+                                    <div class="input-group-append input-group-sm">
+                                        <span class="input-group-text">sec</span>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" type="button" onclick="setWateringDurationForValve(4, 'durationValve4')">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <button type="button" class="btn btn-success btn-sm" onclick="activateValve(4, 1)">Pulse</button>
+                                <button type="button" class="btn btn-warning btn-sm" onclick="activateValve(4, 10)">Für 10 Sekunden bewässern</button>
+                            </div>
+                            <div class="col" id="valve4description"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="pt-3 mt-4 text-muted border-top">Watering-System - UI V1</footer>
+        </div>
+
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) + Bootstrap -->
+        <script
+            src="https://code.jquery.com/jquery-1.12.4.min.js"
+            integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"
+            integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+            crossorigin="anonymous"
+        ></script>
+        <script>
+            var baseUrl = '/';
+            //var baseUrl = 'http://192.168.178.29/'; //for local testing only e.g. if html page is on another host
+            var wsUrl = "";
+            if(baseUrl.startsWith("http")){
+                wsUrl = baseUrl.replace('http://', 'ws://') + "ws";
+            } else {
+                wsUrl = "ws://" + location.host + "/ws";
+            }
+            var reloadTimeout = null;
+
+            var socket = new WebSocket(wsUrl);
+
+            socket.onopen = function (e) {
+                console.log('[open] WS connection established');
+                $('#connectionStatus').removeClass('disconnected');
+                $('#connectionStatus').addClass('connected');
+            };
+
+            socket.onmessage = function (event) {
+                var data = JSON.parse(event.data);
+                $('#status').html(data.cs);
+                var statusBits = data.cs;
+                var pumpStatus = statusBits & 1 << 4;
+                var valve1Status = statusBits & 1 << 3;
+                var valve2Status = statusBits & 1 << 2;
+                var valve3Status = statusBits & 1 << 1;
+                var valve4Status = statusBits & 1;
+
+                $('#pumpStateValue').html(pumpStatus ? 'ein' : 'aus');
+                if (pumpStatus == 0) {
+                    $('#pumpicon').addClass('colorClosed').removeClass('colorOpen fa-spin');
+                } else {
+                    $('#pumpicon').addClass('colorOpen fa-spin').removeClass('colorClosed');
+                }
+
+                $('#valve1StateValue').html(valve1Status ? 'offen' : 'geschlossen');
+                if (valve1Status == 0) {
+                    $('#valve1icon').addClass('fa-tint-slash colorClosed').removeClass('fa-tint colorOpen');
+                } else {
+                    $('#valve1icon').addClass('fa-tint colorOpen').removeClass('fa-tint-slash colorClosed');
+                }
+                $('#valve2StateValue').html(valve2Status ? 'offen' : 'geschlossen');
+                if (valve2Status == 0) {
+                    $('#valve2icon').addClass('fa-tint-slash colorClosed').removeClass('fa-tint colorOpen');
+                } else {
+                    $('#valve2icon').addClass('fa-tint colorOpen').removeClass('fa-tint-slash colorClosed');
+                }
+                $('#valve3StateValue').html(valve3Status ? 'offen' : 'geschlossen');
+                if (valve3Status == 0) {
+                    $('#valve3icon').addClass('fa-tint-slash colorClosed').removeClass('fa-tint colorOpen');
+                } else {
+                    $('#valve3icon').addClass('fa-tint colorOpen').removeClass('fa-tint-slash colorClosed');
+                }
+                $('#valve4StateValue').html(valve4Status ? 'offen' : 'geschlossen');
+                if (valve4Status== 0) {
+                    $('#valve4icon').addClass('fa-tint-slash colorClosed').removeClass('fa-tint colorOpen');
+                } else {
+                    $('#valve4icon').addClass('fa-tint colorOpen').removeClass('fa-tint-slash colorClosed');
+                }
+            };
+
+            socket.onclose = function (event) {
+                if (event.wasClean) {
+                    console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                } else {
+                    console.log('[close] Connection died');
+                }
+                $('#connectionStatus').removeClass('connected');
+                $('#connectionStatus').addClass('disconnected');
+            };
+
+            socket.onerror = function (error) {
+                alert(`[error in websocket communication] ${error.message}`);
+                $('#connectionStatus').removeClass('connected');
+                $('#connectionStatus').addClass('disconnected');
+            };
+
+            function setWateringDurationForValve(valve, durationValueFieldId) {
+                var postData = { channel: valve, duration: $('#' + durationValueFieldId).val() };
+                $.post(baseUrl + './scheduledDuration', postData, function () {
+                    console.log('value saved');
+                });
+            }
+
+            function loadConfig() {
+                $.getJSON(baseUrl + './configuration.json', function (data) {
+                    console.log('config loaded', data);
+                    $('#durationValve1').val(data.valves[0].waterDurationSec);
+                    $('#valve1description').html(data.valves[0].description);
+
+                    $('#durationValve2').val(data.valves[1].waterDurationSec);
+                    $('#valve2description').html(data.valves[1].description);
+
+                    $('#durationValve3').val(data.valves[2].waterDurationSec);
+                    $('#valve3description').html(data.valves[2].description);
+
+                    $('#durationValve4').val(data.valves[3].waterDurationSec);
+                    $('#valve4description').html(data.valves[3].description);
+                });
+            }
+
+            function loadDynamicData() {
+                $.getJSON(baseUrl + './status.json', function (data) {
+                    $('#serverTime').html(data.config.servertime);
+
+                    if (data.status.nextPlannedRun) {
+                        $('#nextPlannedRun').html(new Date(data.status.nextPlannedRun * 1000).toISOString().substr(11, 8));
+                    } else {
+                        $('#nextPlannedRun').html(' - ');
+                    }
+                    window.setTimeout(loadDynamicData, 5000);
+                });
+            }
+
+            function activateValve(valveNumber, duration) {
+                console.log('activating valve' + valveNumber);
+                $.post(baseUrl + './triggerChannel', { channel: valveNumber, duration: duration }).done(function (data) {
+                    console.log('data sent. Received response: ', data);
+                });
+            }
+
+            loadDynamicData();
+            loadConfig();
+        </script>
+    </body>
+</html>
